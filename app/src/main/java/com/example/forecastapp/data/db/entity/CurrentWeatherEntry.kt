@@ -35,4 +35,8 @@ data class CurrentWeatherEntry(
 ){
     @PrimaryKey(autoGenerate = false)
     var id: Int = CURRENT_WEATHER_ID
+
+//    constructor() : this(0, 0, 0,
+//        "", "", 0, 0.0, 0,
+//        0, 0, 0, listOf(""), )
 }
