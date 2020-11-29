@@ -10,18 +10,25 @@ import androidx.lifecycle.Observer
 import com.example.forecastapp.R
 import com.example.forecastapp.data.network.ApixuWeatherApiService
 import com.example.forecastapp.data.network.ConnectivityInterceptorImpl
-import com.example.forecastapp.data.network.WeatherNetworkDataSource
 import com.example.forecastapp.data.network.WeatherNetworkDataSourceImpl
+import com.example.forecastapp.databinding.CurrentWeatherFragmentBinding
+import com.example.forecastapp.ui.base.ScopedFragment
 import kotlinx.android.synthetic.main.current_weather_fragment.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.kodein.di.Kodein
+import org.kodein.di.KodeinAware
+import org.kodein.di.android.x.closestKodein
+import org.kodein.di.generic.instance
 
-class CurrentWeatherFragment : Fragment() {
+class CurrentWeatherFragment : ScopedFragment(), KodeinAware {
 
-    companion object {
-        fun newInstance() = CurrentWeatherFragment()
-    }
+    override val kodein: Kodein by closestKodein()
+    private val viewModelFactory: CurrentWeatherViewModelFactory by instance()
+
+    private var _binding: CurrentWeatherFragmentBinding? = null
+    private val binding get() = _binding!!
 
     private lateinit var viewModel: CurrentWeatherViewModel
 
@@ -29,23 +36,32 @@ class CurrentWeatherFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.current_weather_fragment, container, false)
+        _binding = CurrentWeatherFragmentBinding.inflate(inflater, container, false)
+        val view = binding.root
+        return view
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        viewModel = ViewModelProviders.of(this).get(CurrentWeatherViewModel::class.java)
-        // TODO: Use the ViewModel
-        val apiService = ApixuWeatherApiService(ConnectivityInterceptorImpl(this.context!!))
-        val weatherNetworkDataSource = WeatherNetworkDataSourceImpl(apiService)
+        viewModel = ViewModelProviders.of(this, viewModelFactory).get(CurrentWeatherViewModel::class.java)
 
-        weatherNetworkDataSource.downloadedCurrentWeather.observe(this, Observer{
-            textView.text = it.toString()
+        bindUI()
+
+
+    }
+
+    private fun bindUI() = launch{
+        val currentWeather = viewModel.weather.await()
+        currentWeather.observe(this@CurrentWeatherFragment, Observer{
+            if (it == null) return@Observer
+
+            binding.textView.setText(it.toString())
         })
+    }
 
-        GlobalScope.launch(Dispatchers.Main) {
-            weatherNetworkDataSource.fetchCurrentWeather("London")
-        }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
 }
