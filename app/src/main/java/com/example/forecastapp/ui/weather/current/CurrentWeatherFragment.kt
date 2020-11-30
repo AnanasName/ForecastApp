@@ -6,8 +6,10 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import com.example.forecastapp.R
+import com.example.forecastapp.data.db.entity.glide.GlideApp
 import com.example.forecastapp.data.network.ApixuWeatherApiService
 import com.example.forecastapp.data.network.ConnectivityInterceptorImpl
 import com.example.forecastapp.data.network.WeatherNetworkDataSourceImpl
@@ -21,6 +23,7 @@ import org.kodein.di.Kodein
 import org.kodein.di.KodeinAware
 import org.kodein.di.android.x.closestKodein
 import org.kodein.di.generic.instance
+import java.util.concurrent.locks.Condition
 
 class CurrentWeatherFragment : ScopedFragment(), KodeinAware {
 
@@ -55,8 +58,53 @@ class CurrentWeatherFragment : ScopedFragment(), KodeinAware {
         currentWeather.observe(this@CurrentWeatherFragment, Observer{
             if (it == null) return@Observer
 
-            binding.textView.setText(it.toString())
+            binding.groupLoading.visibility = View.GONE
+            updateWeatherDescription(it.weatherDescriptions[0])
+            updateLocation("Los Angelos")
+            updateDateToToday()
+            updateTemperatures(it.temperature, it.feelslike)
+            updatePrecipitation(it.precip)
+            updateWind(it.windDir, it.windSpeed)
+            updateVisibility(it.visibility)
+            updateCloudCover(it.cloudcover)
+
+            GlideApp.with(this@CurrentWeatherFragment)
+                .load(it.weatherIcons[0])
+                .into(binding.imageViewConditionIcon)
         })
+    }
+
+    private fun updateLocation(location: String){
+        (activity as? AppCompatActivity)?.supportActionBar?.title = location
+    }
+
+    private fun updateDateToToday(){
+        (activity as? AppCompatActivity)?.supportActionBar?.subtitle = "Today"
+    }
+
+    private fun updateTemperatures(temperature: Double, feelsLike: Double){
+        binding.textViewTemperature.text = "$temperature °C"
+        binding.textViewFeelsLikeTemperature.text = "Feels like $feelsLike °C"
+    }
+
+    private fun updatePrecipitation(precipitationVolume: Double){
+        binding.textViewPrecipitation.text = "Precipitation: $precipitationVolume mm"
+    }
+
+    private fun updateWind(windDirection: String, windSpeed: Double){
+        binding.textViewWind.text = "Wind: $windDirection, $windSpeed m/s"
+    }
+
+    private fun updateVisibility(visibilityDistance: Double){
+        binding.textViewVisibility.text = "Visibility: ${visibilityDistance} km"
+    }
+
+    private fun updateCloudCover(cloudCover: Double){
+        binding.textViewPressure.text = "Cloudcover: ${cloudCover}"
+    }
+
+    private fun updateWeatherDescription(weatherDescription: String){
+        binding.textViewWeatherDescription.text = weatherDescription
     }
 
     override fun onDestroyView() {
