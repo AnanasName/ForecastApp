@@ -49,18 +49,23 @@ class CurrentWeatherFragment : ScopedFragment(), KodeinAware {
         viewModel = ViewModelProviders.of(this, viewModelFactory).get(CurrentWeatherViewModel::class.java)
 
         bindUI()
-
-
     }
 
     private fun bindUI() = launch{
         val currentWeather = viewModel.weather.await()
+
+        val weatherLocation = viewModel.weatherLocation.await()
+
+        weatherLocation.observe(this@CurrentWeatherFragment, Observer { location ->
+            if(location == null) return@Observer
+            updateLocation(location.name)
+        })
+
         currentWeather.observe(this@CurrentWeatherFragment, Observer{
             if (it == null) return@Observer
 
             binding.groupLoading.visibility = View.GONE
             updateWeatherDescription(it.weatherDescriptions[0])
-            updateLocation("Los Angelos")
             updateDateToToday()
             updateTemperatures(it.temperature, it.feelslike)
             updatePrecipitation(it.precip)

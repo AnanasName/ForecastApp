@@ -7,8 +7,13 @@ import com.example.forecastapp.data.repository.ForecastRepository
 class CurrentWeatherViewModel(
     private val forecastRepository: ForecastRepository
 ) : ViewModel() {
+
     val weather by lazyDeferred {
         forecastRepository.getCurrentWeather()
+    }
+
+    val weatherLocation by lazyDeferred {
+        forecastRepository.getWeatherLocation()
     }
 
 }
